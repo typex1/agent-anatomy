@@ -1,6 +1,6 @@
 """A complete MCP server in ~30 lines.
 
-This is the OTHER side of the protocol: mcp.py in the package is the
+This is the OTHER side of the protocol: mcp_clients.py in the package is the
 client, this file is a server. The client launches this script as a
 subprocess and they speak JSON-RPC 2.0 over stdin/stdout — that's all
 the "stdio transport" is.

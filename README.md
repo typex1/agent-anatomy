@@ -67,7 +67,7 @@ model = OllamaModel(host="http://localhost:11434", model_id="qwen3:8b")
                               │
               ┌───────────────┼──────────────────┐
               ▼               ▼                  ▼
-          tools/          mcp.py             skills/
+          tools/          mcp_clients.py             skills/
        5 local tools   2 MCP servers      SKILL.md files,
       read_file etc.  ┌────────────┐    loaded on demand by
                       │ AWS Knowledge│   the native AgentSkills
@@ -81,7 +81,7 @@ model = OllamaModel(host="http://localhost:11434", model_id="qwen3:8b")
 ```
 
 **Reading path:** `cli.py` → `agent.py` → `prompts.py` → `tools/file_read.py` →
-`tools/shell.py` → `mcp.py` → `mcp_servers/clock_server.py` → `skills/*/SKILL.md`.
+`tools/shell.py` → `mcp_clients.py` → `mcp_servers/clock_server.py` → `skills/*/SKILL.md`.
 Every file is 30–120 lines and starts with a docstring explaining its role.
 
 ## What this teaches
@@ -91,7 +91,7 @@ Every file is 30–120 lines and starts with a docstring explaining its role.
 | The agent loop (model ↔ tools until done) | `agent.py`, visible via `/trace` |
 | Tools = schema in, string out | `tools/` — five examples, one shape |
 | Human-in-the-loop safety | `tools/shell.py` — the y/n prompt IS the safety model |
-| MCP, both transports | `mcp.py` (client), `mcp_servers/clock_server.py` (server) |
+| MCP, both transports | `mcp_clients.py` (client), `mcp_servers/clock_server.py` (server) |
 | Agent Skills / progressive disclosure | `skills/`, native `AgentSkills` plugin |
 | System prompts are just strings | `prompts.py` — read every word the model sees |
 | Context management | `/clear` + the section below |
@@ -113,6 +113,53 @@ tool-usage policy, ripgrep-backed search, an approval/trust model per tool
 ("Allow this action?"), MCP client support, steering files for persistent
 context, and compaction. Rebuilding the small version is the fastest way to
 read the big ones.
+
+## Chapter 2: to the cloud (AgentCore Runtime + Gateway)
+
+The `agentcore-runtime` branch content promotes the same agent from laptop
+REPL to managed cloud service — with the **AgentCore CLI** (`npm i -g
+@aws/agentcore-cli`), which deploys via CDK:
+
+```
+ laptop:  you ──► cli.py (REPL) ──────────► build_agent()
+ cloud:   POST /invocations ──► runtime.py ──► build_agent()   (same!)
+                                                  │
+    ┌──────────────┬────────────────────────────┬─┘
+    ▼              ▼                            ▼
+ clock server   AWS Knowledge          AgentCore Gateway ──► Lambda
+ (stdio, in     (remote HTTP,          (remote HTTP, YOURS)   aws_lookup
+  container)     managed by AWS)        gateway/aws_lookup/   tools
+```
+
+New files to read, in order:
+
+1. `src/agent_anatomy/runtime.py` — the cloud face: HTTP entrypoint instead
+   of a REPL. Note `run_command` is **excluded**: human-in-the-loop safety
+   does not survive the removal of the human.
+2. `gateway/aws_lookup/handler.py` — a Lambda that *is* two MCP tools yet
+   contains zero MCP code. Gateway does all protocol translation; the tool
+   schema lives separately in `gateway/aws_lookup_schema.json`.
+3. `src/agent_anatomy/mcp_clients.py` (bottom) — the third answer to "where does an
+   MCP tool live?": nowhere, until invoked.
+
+Deploy story (`agentcore/` holds the project config):
+
+```bash
+npm install -g @aws/agentcore-cli
+agentcore deploy          # CDK: runtime + gateway + target (~8 resources)
+agentcore invoke "which AWS account are you running in?"
+agentcore logs            # CloudWatch, streamed
+```
+
+To use the gateway tools from the *local* REPL too:
+
+```bash
+GATEWAY_URL=https://<your-gateway-id>.gateway.bedrock-agentcore.<region>.amazonaws.com/mcp uv run agent
+```
+
+The demo gateway deploys with `authorizerType: NONE` to keep the lesson
+focused. Real deployments should use `CUSTOM_JWT` — see the note in
+`mcp_clients.py` about the client-credentials flow (the code is already there).
 
 ## License
 

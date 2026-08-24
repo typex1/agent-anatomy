@@ -6,7 +6,7 @@ Reading path (see EXPLORING.md for guided questions):
     agent.py    -> the assembly point: model + prompt + tools + MCP + skills
     prompts.py  -> the system prompt: the agent's entire "personality"
     tools/      -> the five built-in tools the model can call
-    mcp.py      -> connecting to MCP servers (remote HTTP + local stdio)
+    mcp_clients.py      -> connecting to MCP servers (remote HTTP + local stdio)
     skills/     -> SKILL.md files loaded on demand (in repo root)
 """
 

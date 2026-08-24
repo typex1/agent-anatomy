@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
+  "name": "agentanatomy",
+  "version": 1,
+  "managedBy": "CDK",
+  "tags": {
+    "agentcore:created-by": "agentcore-cli",
+    "agentcore:project-name": "agentanatomy"
+  },
+  "runtimes": [
+    {
+      "name": "agent_anatomy",
+      "build": "CodeZip",
+      "entrypoint": "src/agent_anatomy/runtime.py",
+      "codeLocation": ".",
+      "runtimeVersion": "PYTHON_3_12",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {
+          "name": "GATEWAY_URL",
+          "value": "https://agentanatomy-anatomy-gw-gycg1yoidm.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp"
+        },
+        {
+          "name": "AWS_REGION_OVERRIDE",
+          "value": "us-west-2"
+        }
+      ]
+    }
+  ],
+  "memories": [],
+  "knowledgeBases": [],
+  "credentials": [],
+  "evaluators": [],
+  "onlineEvalConfigs": [],
+  "agentCoreGateways": [
+    {
+      "name": "anatomy-gw",
+      "protocolType": "MCP",
+      "description": "MCP gateway exposing the aws_lookup Lambda tools",
+      "targets": [
+        {
+          "name": "aws-lookup",
+          "targetType": "lambdaFunctionArn",
+          "lambdaFunctionArn": {
+            "lambdaArn": "arn:aws:lambda:REGION:YOUR_ACCOUNT_ID:function:agent-anatomy-aws-lookup",
+            "toolSchemaFile": "gateway/aws_lookup_schema.json"
+          }
+        }
+      ],
+      "authorizerType": "NONE",
+      "enableSemanticSearch": true,
+      "exceptionLevel": "NONE"
+    }
+  ],
+  "policyEngines": [],
+  "configBundles": [],
+  "abTests": [],
+  "harnesses": [],
+  "datasets": [],
+  "payments": []
+}

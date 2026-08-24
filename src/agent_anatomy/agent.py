@@ -30,12 +30,15 @@ DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 SKILLS_DIR = Path(__file__).parent.parent.parent / "skills"
 
 
-def build_agent(mcp_clients: list[MCPClient]) -> Agent:
+def build_agent(mcp_clients: list[MCPClient], tools: list | None = None) -> Agent:
     """Assemble the agent: model + prompt + tools + MCP + skills.
 
     The MCP clients must already be started (inside their `with` blocks —
     see cli.py). We ask each one for its tool list; those remote tools
     appear to the model exactly like our local @tool functions.
+
+    `tools` overrides the local toolset (runtime.py passes a reduced one:
+    no run_command in the cloud — no human, no approval prompt).
     """
 
     model = BedrockModel(
@@ -43,6 +46,7 @@ def build_agent(mcp_clients: list[MCPClient]) -> Agent:
         region_name=os.environ.get("AWS_REGION", "us-east-1"),
     )
 
+    local_tools = ALL_TOOLS if tools is None else tools
     mcp_tools = [tool for client in mcp_clients for tool in client.list_tools_sync()]
 
     # Native Agent Skills (SKILL.md spec): the plugin lists each skill's
@@ -55,7 +59,7 @@ def build_agent(mcp_clients: list[MCPClient]) -> Agent:
     return Agent(
         model=model,
         system_prompt=SYSTEM_PROMPT,
-        tools=[*ALL_TOOLS, *mcp_tools],
+        tools=[*local_tools, *mcp_tools],
         plugins=[skills],
         callback_handler=None,  # cli.py consumes the result itself
     )
