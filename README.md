@@ -23,7 +23,10 @@ uv run agent
 
 That's it — `uv` resolves Python and dependencies on first run.
 
-Try these in the REPL:
+Try these in the REPL (the **R**ead-**E**val-**P**rint **L**oop — the interactive
+prompt where you type a message, the agent evaluates it, prints its reply, and
+waits for your next one; same idea as the `python` shell, but each line goes to
+an agent instead of an interpreter):
 
 ```
 you> what time is it in UTC+2?                     # local stdio MCP server
