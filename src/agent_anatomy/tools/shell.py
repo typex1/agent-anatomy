@@ -13,12 +13,11 @@ how it "sees" the result and reacts to a denial.
 
 import subprocess
 
-from rich.console import Console
 from rich.prompt import Confirm
 
 from strands import tool
 
-console = Console()
+from ..console import console, suspend_status
 
 TIMEOUT_SECONDS = 60
 
@@ -31,9 +30,12 @@ def run_command(command: str) -> str:
     Args:
         command: The shell command to execute (bash).
     """
-    console.print(f"\n[bold yellow]agent wants to run:[/] [bold]{command}[/]")
-    if not Confirm.ask("Allow?", default=False):
-        return "User DENIED this command. Ask them how to proceed instead."
+    # The spinner in cli.py would repaint right over our question, leaving
+    # the agent looking stuck on "thinking..." — pause it while we ask.
+    with suspend_status():
+        console.print(f"\n[bold yellow]agent wants to run:[/] [bold]{command}[/]")
+        if not Confirm.ask("Allow?", default=False):
+            return "User DENIED this command. Ask them how to proceed instead."
 
     try:
         result = subprocess.run(

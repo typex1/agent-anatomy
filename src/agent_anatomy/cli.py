@@ -16,14 +16,12 @@ Slash commands (handled here, never sent to the model):
 
 import sys
 
-from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 
 from .agent import build_agent
+from .console import console, status
 from .mcp import aws_knowledge_client, clock_client
-
-console = Console()
 
 BANNER = """[bold cyan]agent-anatomy[/] — a coding agent small enough to read
 model responses stream below; [bold]/tools /trace /clear /quit[/]"""
@@ -71,7 +69,7 @@ def repl(agent) -> None:
             console.print("[dim]history cleared — the model now remembers nothing[/]")
             continue
 
-        with console.status("[dim]thinking...[/]"):
+        with status("[dim]thinking...[/]"):
             result = agent(line)
         console.print(Panel(Markdown(str(result)), border_style="dim"))
 
