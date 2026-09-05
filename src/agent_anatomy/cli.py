@@ -14,6 +14,7 @@ Slash commands (handled here, never sent to the model):
     /quit    exit
 """
 
+import logging
 import sys
 from contextlib import ExitStack
 
@@ -23,6 +24,24 @@ from rich.panel import Panel
 from .agent import build_agent
 from .console import console, status
 from .mcp_clients import aws_knowledge_client, clock_client, gateway_client
+
+
+class _BenignEmptyToolInput(logging.Filter):
+    """Hide one specific non-error: when the model calls a NO-ARGUMENT tool,
+    Bedrock streams an empty string as the input JSON. Strands' json.loads("")
+    fails, it warns, then correctly defaults to {} — which is exactly the
+    right input for a no-arg tool. The call succeeds; the warning is noise.
+
+    A filter (not a level bump) so every OTHER warning from the streaming
+    module still reaches the terminal — in this repo, watching the machinery
+    is the point. Still present in strands-agents 1.54.0.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "failed to parse tool input json" not in record.getMessage()
+
+
+logging.getLogger("strands.event_loop.streaming").addFilter(_BenignEmptyToolInput())
 
 BANNER = """[bold cyan]agent-anatomy[/] — a coding agent small enough to read
 model responses stream below; [bold]/tools /trace /clear /quit[/]"""
