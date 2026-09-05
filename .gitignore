@@ -4,3 +4,10 @@ __pycache__/
 dist/
 .ruff_cache/
 .DS_Store
+agentcore/cdk/node_modules/
+agentcore/cdk/cdk.out/
+agentcore/cdk/lib/**/*.js
+agentcore/cdk/lib/**/*.d.ts
+agentcore/.cli/logs/
+agentcore/.cli/
+agentcore/aws-targets.json

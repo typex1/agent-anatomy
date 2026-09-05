@@ -15,13 +15,14 @@ Slash commands (handled here, never sent to the model):
 """
 
 import sys
+from contextlib import ExitStack
 
 from rich.markdown import Markdown
 from rich.panel import Panel
 
 from .agent import build_agent
 from .console import console, status
-from .mcp import aws_knowledge_client, clock_client
+from .mcp_clients import aws_knowledge_client, clock_client, gateway_client
 
 BANNER = """[bold cyan]agent-anatomy[/] — a coding agent small enough to read
 model responses stream below; [bold]/tools /trace /clear /quit[/]"""
@@ -79,10 +80,16 @@ def main() -> None:
 
     # MCP connections are context managers: the remote HTTP session and
     # the clock server subprocess live exactly as long as this block.
-    aws_docs, clock = aws_knowledge_client(), clock_client()
+    # The gateway client only exists once deployed + configured (env vars).
+    clients = [aws_knowledge_client(), clock_client()]
+    gw = gateway_client()
+    if gw is not None:
+        clients.append(gw)
     try:
-        with aws_docs, clock:
-            agent = build_agent([aws_docs, clock])
+        with ExitStack() as stack:
+            for c in clients:
+                stack.enter_context(c)
+            agent = build_agent(clients)
             repl(agent)
     except Exception as e:
         console.print(f"[red]startup failed:[/] {e}")

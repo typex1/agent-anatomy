@@ -1,0 +1,25 @@
+[
+  {
+    "name": "aws_account_info",
+    "description": "Return the AWS account ID and region this tool is running in. Takes no arguments.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "region_location",
+    "description": "Return the physical location (city/country) of an AWS region code such as eu-central-1.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "region": {
+          "type": "string",
+          "description": "AWS region code, e.g. us-east-1"
+        }
+      },
+      "required": ["region"]
+    }
+  }
+]

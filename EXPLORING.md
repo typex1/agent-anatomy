@@ -113,7 +113,7 @@ invisible — every tool is schema in, string out. That's why docstrings are
 written for the model.
 </details>
 
-## 5. `mcp.py` + `mcp_servers/clock_server.py` — the protocol, both sides
+## 5. `mcp_clients.py` + `mcp_servers/clock_server.py` — the protocol, both sides
 
 **Q11.** The AWS Knowledge connection is one URL; the clock connection names a
 command to launch. What does that tell you about the two transports?
@@ -177,6 +177,58 @@ If the skill fired: congratulations, you've extended the agent without
 touching a line of Python. If not: check your `description` — it's the only
 thing the model sees when deciding to load a skill. That description IS the
 trigger.
+</details>
+
+## 7. Chapter 2: `runtime.py` + `gateway/` — the cloud
+
+**Q17.** `runtime.py` builds the agent with `CLOUD_TOOLS` — every tool
+except `run_command`. Why can't the shell tool simply keep its y/n prompt in
+the cloud?
+
+<details><summary>Answer</summary>
+
+The prompt reads from a terminal (`Confirm.ask`), and an AgentCore Runtime
+container has no interactive stdin — nobody is there to answer. The honest
+options are: drop the tool (chosen), auto-deny, or build an out-of-band
+approval channel (what real products do). Human-in-the-loop requires a human.
+</details>
+
+**Q18.** `gateway/aws_lookup/handler.py` implements two MCP tools but
+imports nothing MCP-related. Where do JSON-RPC, the tool schema, and
+transport live?
+
+<details><summary>Answer</summary>
+
+In the Gateway (managed service) and in `aws_lookup_schema.json` (registered
+at deploy time). The Lambda receives plain arguments as its event, plus the
+tool name in `context.client_context`. Contract and code are separate
+artifacts — compare with `@tool`, where the docstring IS the contract.
+</details>
+
+**Q19.** One Lambda serves both `aws_account_info` and `region_location`.
+How does it know which tool was called, and what prefix does the agent see
+on the tool names?
+
+<details><summary>Answer</summary>
+
+Gateway passes `bedrockAgentCoreToolName` in the Lambda client context,
+prefixed with the target name (`aws-lookup___aws_account_info`); our
+`MCPClient(prefix="gw")` adds another layer: `gw_aws-lookup___aws_account_info`
+in `/trace`. Names are namespaced at every hop so tools from different
+sources can't collide.
+</details>
+
+**Q20.** The same `build_agent()` serves both `cli.py` and `runtime.py`.
+List everything that changed between laptop and cloud — and everything that
+didn't.
+
+<details><summary>Answer</summary>
+
+Changed: the interface (REPL → HTTP `/invocations`), the toolset (no
+`run_command`), connection lifetime (per-`with`-block → container lifetime),
+and who provides credentials (your profile → the runtime's execution role).
+Unchanged: model, system prompt, skills, all other tools, both MCP clients,
+and the agent loop itself. The anatomy is portable; only the skin changes.
 </details>
 
 ---
