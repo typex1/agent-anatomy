@@ -149,6 +149,13 @@ Deploy story (`agentcore/` holds the project config):
 
 ```bash
 npm install -g @aws/agentcore-cli
+# one-time: point the project at YOUR account
+cp agentcore/aws-targets.example.json agentcore/aws-targets.json  # edit account/region
+# create the Lambda for the gateway target, then put its ARN into
+# agentcore/agentcore.json (lambdaArn — replace the placeholder):
+#   cd gateway/aws_lookup && zip f.zip handler.py && aws lambda create-function \
+#     --function-name agent-anatomy-aws-lookup --runtime python3.12 \
+#     --handler handler.handler --zip-file fileb://f.zip --role <basic-exec-role-arn>
 agentcore deploy          # CDK: runtime + gateway + target (~8 resources)
 agentcore invoke "which AWS account are you running in?"
 agentcore logs            # CloudWatch, streamed
