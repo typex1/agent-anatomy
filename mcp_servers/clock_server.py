@@ -10,9 +10,20 @@ Run it manually to see it wait for JSON-RPC on stdin:
     uv run python mcp_servers/clock_server.py
 """
 
+import warnings
 from datetime import datetime, timezone
 
-from mcp.server.fastmcp import FastMCP
+# Upstream noise, not ours: FastMCP's Settings has a `lifespan` field whose
+# type hint forward-references FastMCP itself; pydantic-settings >= 2.15
+# warns about that at import time. Harmless (the field defaults to None),
+# but this process inherits the REPL's stderr, so the warning would show up
+# in the user's terminal on every start. Drop the filter once `mcp` calls
+# model_rebuild() upstream.
+warnings.filterwarnings(
+    "ignore", message=".*Field 'lifespan' has an incomplete definition.*"
+)
+
+from mcp.server.fastmcp import FastMCP  # noqa: E402  (after the filter on purpose)
 
 server = FastMCP("clock")
 
